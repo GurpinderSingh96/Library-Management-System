@@ -1,10 +1,18 @@
 package com.StudentLibrary.Studentlibrary.Model;
 
+import java.sql.Date;
+import java.util.List;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.OneToMany;
+
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-
-import javax.persistence.*;
-import java.sql.Date;
 
 @Entity
 public class Student {
@@ -13,19 +21,15 @@ public class Student {
     private int id;
 
     private String emailId;
-
-
     private String name;
-
-    //Future scope adult books filter
     private int age;
     private String country;
 
+    @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Book> books;
 
-    @OneToOne
-    @JoinColumn
-    private Card card;
-
+    @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Transaction> transactions;
 
     @CreationTimestamp
     private Date createdOn;
@@ -40,11 +44,8 @@ public class Student {
         this.country = country;
     }
 
-    public Student(){
-
+    public Student() {
     }
-
-
 
     public int getId() {
         return id;
@@ -86,12 +87,20 @@ public class Student {
         this.country = country;
     }
 
-    public Card getCard() {
-        return card;
+    public List<Book> getBooks() {
+        return books;
     }
 
-    public void setCard(Card card) {
-        this.card = card;
+    public void setBooks(List<Book> books) {
+        this.books = books;
+    }
+
+    public List<Transaction> getTransactions() {
+        return transactions;
+    }
+
+    public void setTransactions(List<Transaction> transactions) {
+        this.transactions = transactions;
     }
 
     public Date getCreatedOn() {

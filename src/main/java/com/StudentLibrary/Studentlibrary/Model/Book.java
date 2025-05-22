@@ -1,9 +1,21 @@
 package com.StudentLibrary.Studentlibrary.Model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
-import javax.persistence.*;
 import java.util.List;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 public class Book {
@@ -19,29 +31,29 @@ public class Book {
     @ManyToOne
     @JoinColumn
     @JsonIgnore
-    Author author;
+    private Author author;
 
     @ManyToOne
     @JoinColumn
     @JsonIgnore
-    Card card;
+    private Student student;
 
-    @Column(columnDefinition = "TINYINT(1)")
+    @Column(columnDefinition = "boolean default true")
     private boolean available;
 
-    @OneToMany(mappedBy = "book",cascade = CascadeType.ALL,fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "book", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
     private List<Transaction> transactions;
 
-    public Book(){
-
+    public Book() {
+        this.available = true;
     }
 
-    public Book( String name, Genre genre,Author author) {
+    public Book(String name, Genre genre, Author author) {
         this.name = name;
         this.genre = genre;
-        this.author=author;
-        this.available =true;
+        this.author = author;
+        this.available = true;
     }
 
     public int getId() {
@@ -76,24 +88,20 @@ public class Book {
         this.author = author;
     }
 
-    public Card getCard() {
-        return card;
+    public Student getStudent() {
+        return student;
     }
 
-    public void setCard(Card card) {
-        this.card = card;
+    public void setStudent(Student student) {
+        this.student = student;
     }
 
-    public boolean getAvailable() {
+    public boolean isAvailable() {
         return available;
     }
 
     public void setAvailable(boolean available) {
         this.available = available;
-    }
-
-    public boolean isAvailable() {
-        return available;
     }
 
     public List<Transaction> getTransactions() {

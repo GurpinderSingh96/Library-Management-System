@@ -1,10 +1,19 @@
 package com.StudentLibrary.Studentlibrary.Model;
 
-import org.hibernate.annotations.CreationTimestamp;
-
-import javax.persistence.*;
 import java.util.Date;
 import java.util.UUID;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+
+import org.hibernate.annotations.CreationTimestamp;
 
 @Entity
 public class Transaction {
@@ -12,11 +21,11 @@ public class Transaction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    private String transactionId= UUID.randomUUID().toString();
+    private String transactionId = UUID.randomUUID().toString();
 
     @ManyToOne
     @JoinColumn
-    private Card card;
+    private Student student;
 
     private int fineAmount;
 
@@ -24,7 +33,7 @@ public class Transaction {
     @JoinColumn
     private Book book;
 
-    @Column(columnDefinition = "TINYINT(1)")
+    @Column(columnDefinition = "boolean default false")
     private Boolean isIssueOperation;
 
     @Enumerated(EnumType.STRING)
@@ -33,12 +42,7 @@ public class Transaction {
     @CreationTimestamp
     private Date transactionDate;
 
-    public Date getTransactionDate() {
-        return transactionDate;
-    }
-
-    public void setTransactionDate(Date transactionDate) {
-        this.transactionDate = transactionDate;
+    public Transaction() {
     }
 
     public int getId() {
@@ -57,12 +61,12 @@ public class Transaction {
         this.transactionId = transactionId;
     }
 
-    public Card getCard() {
-        return card;
+    public Student getStudent() {
+        return student;
     }
 
-    public void setCard(Card card) {
-        this.card = card;
+    public void setStudent(Student student) {
+        this.student = student;
     }
 
     public int getFineAmount() {
@@ -81,12 +85,12 @@ public class Transaction {
         this.book = book;
     }
 
-    public Boolean getIssueOperation() {
+    public Boolean getIsIssueOperation() {
         return isIssueOperation;
     }
 
-    public void setIssueOperation(Boolean issueOperation) {
-        isIssueOperation = issueOperation;
+    public void setIsIssueOperation(Boolean isIssueOperation) {
+        this.isIssueOperation = isIssueOperation;
     }
 
     public TransactionStatus getTransactionStatus() {
@@ -95,5 +99,13 @@ public class Transaction {
 
     public void setTransactionStatus(TransactionStatus transactionStatus) {
         this.transactionStatus = transactionStatus;
+    }
+
+    public Date getTransactionDate() {
+        return transactionDate;
+    }
+
+    public void setTransactionDate(Date transactionDate) {
+        this.transactionDate = transactionDate;
     }
 }
