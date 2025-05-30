@@ -14,31 +14,22 @@ public class StudentController {
 
 
     @PostMapping("/createStudent")
-    public ResponseEntity createStudent(@RequestBody Student student){
+    public ResponseEntity createStudent(@RequestBody Student student) {
         studentService.createStudent(student);
         return new ResponseEntity("Student Successfully added to the system", HttpStatus.CREATED);
-
     }
 
     @PutMapping("/updateStudent")
-    public ResponseEntity updateStudent(@RequestBody Student student){
-        int lines=studentService.updateStudent(student);
-        return new ResponseEntity("Student updated",HttpStatus.OK);
+    public ResponseEntity updateStudent(@RequestBody Student student) {
+        int lines = studentService.updateStudent(student);
+        return new ResponseEntity("Student updated", HttpStatus.OK);
     }
 
     @DeleteMapping("/deleteStudent")
-    public ResponseEntity deleteStudent(@RequestParam("id")int id){
+    public ResponseEntity deleteStudent(@RequestParam("id") int id) {
         studentService.deleteStudent(id);
-        return new ResponseEntity("student successfully deleted!!",HttpStatus.OK);
+        return new ResponseEntity("student successfully deleted!!", HttpStatus.OK);
     }
-
-
-
-
-
-
-
-
 
 
 }
