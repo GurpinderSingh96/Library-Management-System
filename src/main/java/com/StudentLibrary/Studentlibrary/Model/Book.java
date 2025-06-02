@@ -12,6 +12,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 
@@ -30,7 +31,6 @@ public class Book {
 
     @ManyToOne
     @JoinColumn
-    @JsonIgnore
     private Author author;
 
     @ManyToOne
@@ -38,8 +38,19 @@ public class Book {
     @JsonIgnore
     private Student student;
 
+    private Integer publishedYear;
+    
     @Column(columnDefinition = "boolean default true")
     private boolean available;
+    
+    @Lob
+    @Column(columnDefinition = "TEXT")
+    private String description;
+    
+    @Lob
+    @Column(name = "cover_image")
+    @JsonIgnore
+    private byte[] coverImage;
 
     @OneToMany(mappedBy = "book", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
@@ -110,5 +121,45 @@ public class Book {
 
     public void setTransactions(List<Transaction> transactions) {
         this.transactions = transactions;
+    }
+    
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+    
+    public Integer getPublishedYear() {
+        return publishedYear;
+    }
+
+    public void setPublishedYear(Integer publishedYear) {
+        this.publishedYear = publishedYear;
+    }
+    
+    public byte[] getCoverImage() {
+        return coverImage;
+    }
+
+    public void setCoverImage(byte[] coverImage) {
+        this.coverImage = coverImage;
+    }
+    
+    public boolean hasImage() {
+        return coverImage != null && coverImage.length > 0;
+    }
+    
+    @Override
+    public String toString() {
+        return "Book{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", genre=" + genre +
+                ", author=" + (author != null ? author.getName() : "null") +
+                ", available=" + available +
+                ", hasImage=" + hasImage() +
+                '}';
     }
 }

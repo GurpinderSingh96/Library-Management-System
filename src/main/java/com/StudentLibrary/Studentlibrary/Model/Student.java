@@ -1,18 +1,19 @@
 package com.StudentLibrary.Studentlibrary.Model;
 
-import java.sql.Date;
 import java.util.List;
 
 import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 public class Student {
@@ -20,31 +21,35 @@ public class Student {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    private String emailId;
     private String name;
+
+    @Column(unique = true)
+    private String emailId;
+
     private int age;
     private String country;
 
-    @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToOne
+    @JoinColumn(name = "user_id")
+    @JsonIgnore
+    private User user;
+
+    @OneToMany(mappedBy = "student", fetch = FetchType.LAZY)
+    @JsonIgnore
     private List<Book> books;
 
     @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
     private List<Transaction> transactions;
 
-    @CreationTimestamp
-    private Date createdOn;
-
-    @UpdateTimestamp
-    private Date updatedOn;
-
-    public Student(String emailId, String name, int age, String country) {
-        this.emailId = emailId;
-        this.name = name;
-        this.age = age;
-        this.country = country;
+    public Student() {
     }
 
-    public Student() {
+    public Student(String name, String emailId, int age, String country) {
+        this.name = name;
+        this.emailId = emailId;
+        this.age = age;
+        this.country = country;
     }
 
     public int getId() {
@@ -55,20 +60,20 @@ public class Student {
         this.id = id;
     }
 
-    public String getEmailId() {
-        return emailId;
-    }
-
-    public void setEmailId(String emailId) {
-        this.emailId = emailId;
-    }
-
     public String getName() {
         return name;
     }
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getEmailId() {
+        return emailId;
+    }
+
+    public void setEmailId(String emailId) {
+        this.emailId = emailId;
     }
 
     public int getAge() {
@@ -87,6 +92,14 @@ public class Student {
         this.country = country;
     }
 
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
     public List<Book> getBooks() {
         return books;
     }
@@ -101,21 +114,5 @@ public class Student {
 
     public void setTransactions(List<Transaction> transactions) {
         this.transactions = transactions;
-    }
-
-    public Date getCreatedOn() {
-        return createdOn;
-    }
-
-    public void setCreatedOn(Date createdOn) {
-        this.createdOn = createdOn;
-    }
-
-    public Date getUpdatedOn() {
-        return updatedOn;
-    }
-
-    public void setUpdatedOn(Date updatedOn) {
-        this.updatedOn = updatedOn;
     }
 }

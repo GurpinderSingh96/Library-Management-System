@@ -17,7 +17,7 @@ import com.StudentLibrary.Studentlibrary.Model.Book;
 public interface BookRepository extends JpaRepository<Book, Integer> {
 
     @Modifying
-    @Query("update Book b set b.available = :#{#book.available}, b.student = :#{#book.student} where b.id = :#{#book.id}")
+    @Query("update Book b set b.name = :#{#book.name}, b.genre = :#{#book.genre}, b.description = :#{#book.description}, b.publishedYear = :#{#book.publishedYear}, b.available = :#{#book.available}, b.author.id = :#{#book.author.id} where b.id = :#{#book.id}")
     int updateBook(@Param("book") Book book);
 
     @Query("select b from Book b where b.genre = :genre and b.available = :isAvailable and b.author.name = :author")
@@ -31,4 +31,8 @@ public interface BookRepository extends JpaRepository<Book, Integer> {
 
     @Query("select b from Book b where b.available = :isAvailable")
     List<Book> findBooksByAvailability(@Param("isAvailable") boolean isAvailable);
+    
+    long countByAvailable(boolean available);
+    
+    List<Book> findTop5ByOrderByIdDesc();
 }

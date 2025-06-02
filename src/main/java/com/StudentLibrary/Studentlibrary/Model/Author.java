@@ -1,6 +1,9 @@
 package com.StudentLibrary.Studentlibrary.Model;
-import javax.persistence.*;
 import java.util.List;
+
+import javax.persistence.*;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 public class Author {
@@ -17,7 +20,8 @@ public class Author {
     private String country;
 
 
-    @OneToMany(mappedBy = "author",cascade = CascadeType.ALL,fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
     private List<Book> books_written;
 
     public Author(){}
@@ -75,5 +79,16 @@ public class Author {
 
     public void setBooks_written(List<Book> books_written) {
         this.books_written = books_written;
+    }
+    
+    @Override
+    public String toString() {
+        return "Author{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", email='" + email + '\'' +
+                ", age=" + age +
+                ", country='" + country + '\'' +
+                '}';
     }
 }
