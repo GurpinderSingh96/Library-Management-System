@@ -28,7 +28,29 @@ const bookService = {
       throw error;
     }
   },
-
+  uploadBookImage: async (formData) => {
+    try {
+      console.log("Uploading image with form data:");
+      for (let [key, value] of formData.entries()) {
+        console.log(`${key}: ${value instanceof File ? 'File: ' + value.name + ' (' + value.size + ' bytes)' : value}`);
+      }
+      
+      // Make sure we're using the correct content type for file uploads
+      const response = await api.post('/api/books/public/uploadImage', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        },
+        // Add timeout to ensure large images have time to upload
+        timeout: 30000
+      });
+      
+      console.log("Image upload successful:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Error uploading book image:", error);
+      throw error;
+    }
+  },
   createBook: async (bookData) => {
     try {
       const response = await api.post('/api/books/create', bookData);
@@ -40,19 +62,21 @@ const bookService = {
   
   createBookWithImage: async (formData) => {
     try {
-      console.log("Sending form data to server:");
-      
-      // Log form data contents for debugging
-      for (let pair of formData.entries()) {
-        console.log(pair[0] + ': ' + (pair[0] === 'image' ? 'File object' : pair[1]));
+      // For debugging - log all form data entries
+      console.log("Form data being sent to createWithImage endpoint:");
+      for (let [key, value] of formData.entries()) {
+        console.log(`${key}: ${value instanceof File ? 'File: ' + value.name + ' (' + value.size + ' bytes)' : value}`);
       }
       
-      // Explicitly set Content-Type to false to let the browser set it correctly with boundary
+      // Use the endpoint that handles both book data and image in one request
       const response = await api.post('/api/books/public/createWithImage', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
-        }
+        },
+        timeout: 30000 // 30 second timeout for large images
       });
+      
+      console.log("Book created with image response:", response.data);
       return response.data;
     } catch (error) {
       console.error("Error in createBookWithImage:", error);
@@ -103,6 +127,7 @@ const bookService = {
   },
   
   getBookImageUrl: (id) => {
+    // Add a timestamp to prevent browser caching
     return `${api.defaults.baseURL}/api/books/public/image?id=${id}&timestamp=${new Date().getTime()}`;
   }
 };

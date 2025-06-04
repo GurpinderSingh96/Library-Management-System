@@ -26,6 +26,8 @@ import {
   CardActions,
   CardMedia,
   Pagination,
+  Tab,
+  Tabs,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
@@ -35,6 +37,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import ImageIcon from '@mui/icons-material/Image';
 import { Link } from 'react-router-dom';
 import bookService from '../services/bookService';
+import authorService from '../services/authorService';
 
 const Books = () => {
   const [page, setPage] = useState(0);
@@ -47,11 +50,14 @@ const Books = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [books, setBooks] = useState([]);
+  const [authors, setAuthors] = useState([]);
   const [fetchingBooks, setFetchingBooks] = useState(true);
   const [fetchError, setFetchError] = useState('');
   const [selectedBook, setSelectedBook] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [authorTabValue, setAuthorTabValue] = useState(0); // 0 for new author, 1 for existing author
+  const [selectedAuthorId, setSelectedAuthorId] = useState('');
   const [newBook, setNewBook] = useState({
     name: '',
     genre: '',
@@ -72,7 +78,7 @@ const Books = () => {
     available: true
   });
 
-  const genres = ['FICTIONAL', 'NON_FICTIONAL', 'GEOGRAPHY', 'HISTORY', 'POLITICAL_SCIENCE', 'BOTANY', 'CHEMISTRY', 'MATHEMATICS', 'PHYSICS', 'COMPUTER_SCIENCE'];
+  const genres = ['FICTIONAL', 'NON_FICTIONAL', 'GEOGRAPHY', 'HISTORY', 'POLITICAL_SCIENCE', 'BOTANY', 'CHEMISTRY', 'MATHEMATICS', 'PHYSICS'];
 
   // Fetch books from the database
   useEffect(() => {
@@ -86,6 +92,10 @@ const Books = () => {
         console.log("Raw books data:", JSON.stringify(booksData));
         setBooks(Array.isArray(booksData) ? booksData : []);
         console.log("Books state after update:", books.length);
+        
+        // Fetch authors
+        const authorsData = await authorService.getAllAuthors();
+        setAuthors(Array.isArray(authorsData) ? authorsData : []);
         
         setFetchError('');
       } catch (err) {
@@ -125,6 +135,8 @@ const Books = () => {
       authorAge: '',
       authorCountry: '',
     });
+    setSelectedAuthorId('');
+    setAuthorTabValue(0);
     setSelectedImage(null);
     setImagePreview(null);
     setError('');
@@ -206,44 +218,76 @@ const Books = () => {
 
   const handleAddBook = async () => {
     // Validate form
-    if (!newBook.name || !newBook.genre || !newBook.authorName || !newBook.authorEmail || !newBook.authorAge || !newBook.authorCountry) {
-      setError('Please fill in all required fields');
-      return;
+    if (authorTabValue === 0) {
+      // New author validation
+      if (!newBook.name || !newBook.genre || !newBook.authorName || !newBook.authorEmail || !newBook.authorAge || !newBook.authorCountry) {
+        setError('Please fill in all required fields');
+        return;
+      }
+    } else {
+      // Existing author validation
+      if (!newBook.name || !newBook.genre || !selectedAuthorId) {
+        setError('Please fill in all required fields');
+        return;
+      }
     }
 
     setLoading(true);
     setError('');
     
     try {
-      // Debug logs
-      console.log("Form data being sent:");
-      console.log("Name:", newBook.name);
-      console.log("Genre:", newBook.genre);
-      console.log("Author Name:", newBook.authorName);
-      console.log("Author Email:", newBook.authorEmail);
-      console.log("Author Age:", newBook.authorAge);
-      console.log("Author Country:", newBook.authorCountry);
-      console.log("Image:", selectedImage ? selectedImage.name : "No image");
-      
       // Create FormData object for multipart/form-data
       const formData = new FormData();
       formData.append('name', newBook.name);
       formData.append('genre', newBook.genre);
-      formData.append('description', newBook.description);
-      if (newBook.publishedYear) {
+      
+      // Handle optional fields
+      formData.append('description', newBook.description || '');
+      
+      // Handle publishedYear
+      if (newBook.publishedYear && !isNaN(parseInt(newBook.publishedYear))) {
         formData.append('publishedYear', newBook.publishedYear);
       }
-      formData.append('authorName', newBook.authorName);
-      formData.append('authorEmail', newBook.authorEmail);
-      formData.append('authorAge', newBook.authorAge);
-      formData.append('authorCountry', newBook.authorCountry);
       
+      // Add author information
+      if (authorTabValue === 0) {
+        // New author
+        formData.append('authorName', newBook.authorName);
+        formData.append('authorEmail', newBook.authorEmail);
+        formData.append('authorAge', newBook.authorAge);
+        formData.append('authorCountry', newBook.authorCountry);
+      } else {
+        // Existing author - get author details from the selected author
+        const selectedAuthor = authors.find(author => author.id === parseInt(selectedAuthorId));
+        if (selectedAuthor) {
+          formData.append('authorName', selectedAuthor.name);
+          formData.append('authorEmail', selectedAuthor.email);
+          formData.append('authorAge', selectedAuthor.age.toString());
+          formData.append('authorCountry', selectedAuthor.country);
+        } else {
+          setError('Selected author not found');
+          setLoading(false);
+          return;
+        }
+      }
+      
+      // Add image if selected
       if (selectedImage) {
         formData.append('image', selectedImage);
       }
       
+      console.log("Submitting form data to createWithImage endpoint");
+      for (let [key, value] of formData.entries()) {
+        console.log(`${key}: ${value instanceof File ? 'File: ' + value.name + ' (' + value.size + ' bytes)' : value}`);
+      }
+      
+      // Use the createWithImage endpoint that handles both book data and image in one request
       const response = await bookService.createBookWithImage(formData);
-      console.log('Book created:', response);
+      console.log('Book created with image:', response);
+      
+      setSuccess('Book created successfully');
+      
+      // Set success message
       setSuccess('Book created successfully');
       
       // Refresh book list
@@ -257,7 +301,7 @@ const Books = () => {
       
     } catch (err) {
       console.error('Error creating book:', err);
-      setError(err.response?.data?.message || 'Failed to create book');
+      setError(err.message || 'Failed to create book');
     } finally {
       setLoading(false);
     }
@@ -431,7 +475,12 @@ const Books = () => {
                           image={bookService.getBookImageUrl(book.id)}
                           alt={book.name}
                           sx={{ objectFit: 'contain', p: 2, bgcolor: '#f5f5f5' }}
+                          onError={(e) => {
+                            console.log(`Image failed to load for book ID: ${book.id}`);
+                            e.target.src = '/placeholder-book.png';
+                          }}
                         />
+
                       </Box>
                       <CardContent sx={{ flexGrow: 1 }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
@@ -640,58 +689,109 @@ const Books = () => {
           <Typography variant="h6" gutterBottom>
             Author Details
           </Typography>
-          <Grid container spacing={2}>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Author Name"
-                variant="outlined"
-                name="authorName"
-                value={newBook.authorName}
-                onChange={handleInputChange}
-                required
-                disabled={loading}
-              />
+          
+          <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+            <Tabs value={authorTabValue} onChange={(e, newValue) => setAuthorTabValue(newValue)}>
+              <Tab label="Add New Author" />
+              <Tab label="Select Existing Author" />
+            </Tabs>
+          </Box>
+          
+          {authorTabValue === 0 ? (
+            // New Author Form
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Author Name"
+                  variant="outlined"
+                  name="authorName"
+                  value={newBook.authorName}
+                  onChange={handleInputChange}
+                  required
+                  disabled={loading}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Author Email"
+                  variant="outlined"
+                  name="authorEmail"
+                  type="email"
+                  value={newBook.authorEmail}
+                  onChange={handleInputChange}
+                  required
+                  disabled={loading}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Author Age"
+                  variant="outlined"
+                  name="authorAge"
+                  type="number"
+                  value={newBook.authorAge}
+                  onChange={handleInputChange}
+                  required
+                  disabled={loading}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Author Country"
+                  variant="outlined"
+                  name="authorCountry"
+                  value={newBook.authorCountry}
+                  onChange={handleInputChange}
+                  required
+                  disabled={loading}
+                />
+              </Grid>
             </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Author Email"
-                variant="outlined"
-                name="authorEmail"
-                type="email"
-                value={newBook.authorEmail}
-                onChange={handleInputChange}
-                required
-                disabled={loading}
-              />
+          ) : (
+            // Existing Author Selection
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <FormControl fullWidth required>
+                  <InputLabel id="author-select-label">Select Author</InputLabel>
+                  <Select
+                    labelId="author-select-label"
+                    value={selectedAuthorId}
+                    onChange={(e) => setSelectedAuthorId(e.target.value)}
+                    label="Select Author"
+                    disabled={loading}
+                  >
+                    {authors.map((author) => (
+                      <MenuItem key={author.id} value={author.id}>
+                        {author.name} ({author.email})
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              {selectedAuthorId && (
+                <Grid item xs={12}>
+                  <Box sx={{ mt: 2, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+                    {(() => {
+                      const author = authors.find(a => a.id === parseInt(selectedAuthorId));
+                      return author ? (
+                        <>
+                          <Typography variant="subtitle1">Author Details</Typography>
+                          <Typography variant="body2">Name: {author.name}</Typography>
+                          <Typography variant="body2">Email: {author.email}</Typography>
+                          <Typography variant="body2">Age: {author.age}</Typography>
+                          <Typography variant="body2">Country: {author.country}</Typography>
+                        </>
+                      ) : null;
+                    })()}
+                  </Box>
+                </Grid>
+              )}
             </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Author Age"
-                variant="outlined"
-                name="authorAge"
-                type="number"
-                value={newBook.authorAge}
-                onChange={handleInputChange}
-                required
-                disabled={loading}
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Author Country"
-                variant="outlined"
-                name="authorCountry"
-                value={newBook.authorCountry}
-                onChange={handleInputChange}
-                required
-                disabled={loading}
-              />
-            </Grid>
-          </Grid>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseAddDialog} disabled={loading}>Cancel</Button>

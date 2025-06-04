@@ -17,6 +17,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Entity
 public class Book {
@@ -48,7 +49,7 @@ public class Book {
     private String description;
     
     @Lob
-    @Column(name = "cover_image")
+    @Column(name = "cover_image", columnDefinition = "bytea")
     @JsonIgnore
     private byte[] coverImage;
 
@@ -147,6 +148,7 @@ public class Book {
         this.coverImage = coverImage;
     }
     
+    @JsonProperty("hasImage")
     public boolean hasImage() {
         return coverImage != null && coverImage.length > 0;
     }

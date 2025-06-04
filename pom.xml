@@ -14,7 +14,7 @@
 	<name>Student-library</name>
 	<description>Student Library Management System</description>
 	<properties>
-		<java.version>11</java.version>
+		<java.version>18</java.version>
 	</properties>
 	<dependencies>
 		<dependency>

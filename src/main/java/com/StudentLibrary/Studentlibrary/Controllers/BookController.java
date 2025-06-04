@@ -67,6 +67,11 @@ public class BookController {
             System.out.println("Author Age: " + authorAge);
             System.out.println("Author Country: " + authorCountry);
             System.out.println("Image present: " + (image != null));
+            if (image != null) {
+                System.out.println("Image size: " + image.getSize() + " bytes");
+                System.out.println("Image content type: " + image.getContentType());
+                System.out.println("Image name: " + image.getOriginalFilename());
+            }
             
             // Parse author age
             int age;
@@ -112,20 +117,71 @@ public class BookController {
             
             // Save image if provided
             if (image != null && !image.isEmpty()) {
-                book = bookService.createBookWithImage(book, image);
-            } else {
-                book = bookService.createBook(book);
+                book.setCoverImage(image.getBytes());
+                System.out.println("Image data set on book entity, size: " + image.getSize() + " bytes");
             }
+            
+            // Save the book
+            book = bookService.createBook(book);
+            System.out.println("Book created with ID: " + book.getId() + ", has image: " + book.hasImage());
             
             Map<String, Object> response = new HashMap<>();
             response.put("message", "Book added successfully");
             response.put("id", book.getId());
+            response.put("hasImage", book.hasImage());
             
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (Exception e) {
             e.printStackTrace();
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("message", "Failed to create book: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        }
+    }
+    
+    @PostMapping(value = "/public/uploadImage", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+    public ResponseEntity<?> uploadBookImage(
+            @RequestParam("bookId") int bookId,
+            @RequestParam("image") MultipartFile image) {
+        
+        try {
+            // Debug logs
+            System.out.println("Received book image upload request:");
+            System.out.println("Book ID: " + bookId);
+            System.out.println("Image present: " + (image != null));
+            System.out.println("Image empty: " + (image != null && image.isEmpty()));
+            System.out.println("Image size: " + (image != null ? image.getSize() : "N/A") + " bytes");
+            System.out.println("Image content type: " + (image != null ? image.getContentType() : "N/A"));
+            System.out.println("Image name: " + (image != null ? image.getOriginalFilename() : "N/A"));
+            
+            if (image == null || image.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("message", "No image provided"));
+            }
+            
+            // Get the book
+            Book book = bookService.getBookById(bookId);
+            if (book == null) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            // Set the image data directly on the book entity
+            book.setCoverImage(image.getBytes());
+            System.out.println("Image data set on book entity, size: " + image.getSize() + " bytes");
+            
+            // Save the book with the image
+            Book updatedBook = bookService.createBook(book);
+            System.out.println("Book updated with image: " + updatedBook.getId() + ", has image: " + updatedBook.hasImage());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Image uploaded successfully");
+            response.put("id", updatedBook.getId());
+            response.put("hasImage", updatedBook.hasImage());
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", "Failed to upload image: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         }
     }
@@ -178,12 +234,22 @@ public class BookController {
     @GetMapping("/public/image")
     public ResponseEntity<?> getBookImage(@RequestParam int id) {
         try {
-            byte[] imageData = bookService.getBookImage(id);
+            System.out.println("Getting image for book ID: " + id);
+            Book book = bookService.getBookById(id);
+            
+            if (book == null) {
+                System.out.println("Book not found with ID: " + id);
+                return ResponseEntity.notFound().build();
+            }
+            
+            byte[] imageData = book.getCoverImage();
             if (imageData != null && imageData.length > 0) {
+                System.out.println("Image found for book: " + book.getName() + ", size: " + imageData.length + " bytes");
                 return ResponseEntity.ok()
                         .contentType(MediaType.IMAGE_JPEG)
                         .body(imageData);
             } else {
+                System.out.println("No image found for book: " + book.getName());
                 return ResponseEntity.notFound().build();
             }
         } catch (Exception e) {

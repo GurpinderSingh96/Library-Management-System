@@ -31,10 +31,18 @@ public class BookService {
         }
         
         if (image != null && !image.isEmpty()) {
-            book.setCoverImage(image.getBytes());
+            byte[] imageData = image.getBytes();
+            System.out.println("Setting image data on book, size: " + imageData.length + " bytes");
+            book.setCoverImage(imageData);
         }
         
-        return bookRepository.save(book);
+        Book savedBook = bookRepository.save(book);
+        System.out.println("Book saved with ID: " + savedBook.getId() + 
+                          ", has image: " + (savedBook.getCoverImage() != null && savedBook.getCoverImage().length > 0));
+        if (savedBook.getCoverImage() != null) {
+            System.out.println("Saved image size: " + savedBook.getCoverImage().length + " bytes");
+        }
+        return savedBook;
     }
 
     public List<Book> getBooks(String genre, boolean isAvailable, String author) {
@@ -76,9 +84,49 @@ public class BookService {
     public byte[] getBookImage(int id) {
         try {
             Book book = getBookById(id);
+            if (book.getCoverImage() == null || book.getCoverImage().length == 0) {
+                System.out.println("Book has no image: " + book.getName());
+                return null;
+            }
+            System.out.println("Returning image for book: " + book.getName() + ", image size: " + book.getCoverImage().length + " bytes");
             return book.getCoverImage();
         } catch (Exception e) {
             System.err.println("Service: Error fetching book image: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
+    }
+    
+    @Transactional
+    public Book updateBookImage(int bookId, MultipartFile image) throws IOException {
+        try {
+            System.out.println("Service: Updating image for book ID: " + bookId);
+            
+            // Check if book exists
+            if (!bookRepository.existsById(bookId)) {
+                throw new RuntimeException("Book not found with id: " + bookId);
+            }
+            
+            // Update the book image
+            if (image != null && !image.isEmpty()) {
+                byte[] imageData = image.getBytes();
+                System.out.println("Service: Image size: " + imageData.length + " bytes");
+                
+                // Get the book and update it directly
+                Book book = bookRepository.findById(bookId)
+                    .orElseThrow(() -> new RuntimeException("Book not found with id: " + bookId));
+                
+                book.setCoverImage(imageData);
+                Book savedBook = bookRepository.save(book);
+                
+                System.out.println("Service: Book saved with image: " + savedBook.getName() + 
+                                  ", has image: " + (savedBook.getCoverImage() != null && savedBook.getCoverImage().length > 0));
+                return savedBook;
+            } else {
+                throw new RuntimeException("Image data is empty");
+            }
+        } catch (Exception e) {
+            System.err.println("Service: Error updating book image: " + e.getMessage());
             e.printStackTrace();
             throw e;
         }
