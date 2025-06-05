@@ -26,11 +26,14 @@ import {
   IconButton,
   CircularProgress,
   Alert,
+  ButtonGroup,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import BugReportIcon from '@mui/icons-material/BugReport';
 import transactionService from '../services/transactionService';
 import studentService from '../services/studentService';
 import bookService from '../services/bookService';
@@ -55,14 +58,29 @@ const Transactions = () => {
   const [issueSuccess, setIssueSuccess] = useState(null);
   const [returnSuccess, setReturnSuccess] = useState(null);
   const [loadingStudentsBooks, setLoadingStudentsBooks] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [debugInfo, setDebugInfo] = useState('');
 
-  // Fetch transactions when component mounts
+  // Display debug info for transactions
+  useEffect(() => {
+    if (transactions && transactions.length > 0) {
+      console.log("Current transactions in state:", transactions);
+      setDebugInfo(`Loaded ${transactions.length} transactions`);
+    } else {
+      console.log("No transactions in state or empty array");
+      setDebugInfo("No transactions loaded");
+    }
+  }, [transactions]);
+
+  // Fetch transactions when component mounts or when refreshTrigger changes
   useEffect(() => {
     const fetchTransactions = async () => {
       try {
         setLoading(true);
+        console.log("Fetching transactions from API...");
         const data = await transactionService.getAllTransactions();
-        setTransactions(data);
+        console.log("Transactions received:", data);
+        setTransactions(data || []);
         setLoading(false);
       } catch (err) {
         console.error("Error fetching transactions:", err);
@@ -72,7 +90,7 @@ const Transactions = () => {
     };
 
     fetchTransactions();
-  }, []);
+  }, [refreshTrigger]);
 
   // Fetch students and books for the dialogs
   useEffect(() => {
@@ -116,13 +134,21 @@ const Transactions = () => {
     try {
       const response = await transactionService.issueBook(selectedBook, selectedStudent);
       setIssueSuccess("Book issued successfully!");
+      // Refresh transactions immediately
+      try {
+        const updatedTransactions = await transactionService.getAllTransactions();
+        setTransactions(updatedTransactions || []);
+      } catch (refreshErr) {
+        console.error("Error refreshing transactions after issue:", refreshErr);
+      }
+      
       setTimeout(() => {
         setIssueSuccess(null);
         setOpenIssueDialog(false);
         setSelectedStudent('');
         setSelectedBook('');
-        // Refresh transactions
-        transactionService.getAllTransactions().then(data => setTransactions(data));
+        // Trigger another refresh
+        setRefreshTrigger(prev => prev + 1);
       }, 2000);
     } catch (err) {
       console.error("Error issuing book:", err);
@@ -139,13 +165,21 @@ const Transactions = () => {
     try {
       const response = await transactionService.returnBook(selectedBook, selectedStudent);
       setReturnSuccess("Book returned successfully!");
+      // Refresh transactions immediately
+      try {
+        const updatedTransactions = await transactionService.getAllTransactions();
+        setTransactions(updatedTransactions || []);
+      } catch (refreshErr) {
+        console.error("Error refreshing transactions after return:", refreshErr);
+      }
+      
       setTimeout(() => {
         setReturnSuccess(null);
         setOpenReturnDialog(false);
         setSelectedStudent('');
         setSelectedBook('');
-        // Refresh transactions
-        transactionService.getAllTransactions().then(data => setTransactions(data));
+        // Trigger another refresh
+        setRefreshTrigger(prev => prev + 1);
       }, 2000);
     } catch (err) {
       console.error("Error returning book:", err);
@@ -174,18 +208,22 @@ const Transactions = () => {
   
   // Filter transactions based on search term, transaction type, and status
   const filteredTransactions = transactions.filter((transaction) => {
-    const studentName = transaction.student ? transaction.student.name : '';
-    const bookTitle = transaction.book ? transaction.book.name : '';
+    // Safely get student name and book title, handling null values
+    const studentName = transaction.student && transaction.student.name ? transaction.student.name : '';
+    const bookTitle = transaction.book && transaction.book.name ? transaction.book.name : '';
     
-    const matchesSearch = 
+    // Safe search matching
+    const matchesSearch = searchTerm === '' || 
       studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       bookTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (transaction.transactionId && transaction.transactionId.toLowerCase().includes(searchTerm.toLowerCase()));
       
+    // Safe type matching
     const matchesType = transactionType === '' || 
       (transaction.isIssueOperation && transactionType === 'ISSUE') || 
       (!transaction.isIssueOperation && transactionType === 'RETURN');
       
+    // Safe status matching
     const matchesStatus = status === '' || 
       (transaction.transactionStatus && transaction.transactionStatus === status);
     
@@ -223,6 +261,12 @@ const Transactions = () => {
     setSelectedBook('');
   };
 
+  // Force refresh transactions
+  const handleForceRefresh = () => {
+    console.log("Manually refreshing transactions...");
+    setRefreshTrigger(prev => prev + 1);
+  };
+
   return (
     <Box className="page-container">
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -230,21 +274,28 @@ const Transactions = () => {
           Transactions
         </Typography>
         <Box>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleOpenIssueDialog}
-            sx={{ mr: 2 }}
-          >
-            Issue Book
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<AddIcon />}
-            onClick={handleOpenReturnDialog}
-          >
-            Return Book
-          </Button>
+          <ButtonGroup variant="contained" sx={{ mr: 2 }}>
+            <Button
+              startIcon={<AddIcon />}
+              onClick={handleOpenIssueDialog}
+            >
+              Issue Book
+            </Button>
+            <Button
+              startIcon={<AddIcon />}
+              onClick={handleOpenReturnDialog}
+            >
+              Return Book
+            </Button>
+          </ButtonGroup>
+          <ButtonGroup variant="outlined">
+            <Button
+              startIcon={<RefreshIcon />}
+              onClick={handleForceRefresh}
+            >
+              Refresh
+            </Button>
+          </ButtonGroup>
         </Box>
       </Box>
 
@@ -312,6 +363,13 @@ const Transactions = () => {
         </Grid>
       </Grid>
 
+      {/* Debug info */}
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="body2" color="text.secondary">
+          {debugInfo}
+        </Typography>
+      </Box>
+
       {/* Transactions Table */}
       <TableContainer component={Paper} sx={{ mb: 3 }}>
         {loading ? (
@@ -343,8 +401,8 @@ const Transactions = () => {
                     >
                       <TableCell>{transaction.id || `TXN-${index + 1}`}</TableCell>
                       <TableCell>{transaction.transactionId || 'N/A'}</TableCell>
-                      <TableCell>{transaction.student ? transaction.student.name : 'N/A'}</TableCell>
-                      <TableCell>{transaction.book ? transaction.book.name : 'N/A'}</TableCell>
+                      <TableCell>{transaction.student && transaction.student.name ? transaction.student.name : 'N/A'}</TableCell>
+                      <TableCell>{transaction.book && transaction.book.name ? transaction.book.name : 'N/A'}</TableCell>
                       <TableCell>
                         <Chip
                           label={transaction.isIssueOperation ? 'ISSUE' : 'RETURN'}

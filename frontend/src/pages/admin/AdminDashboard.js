@@ -55,11 +55,8 @@ const AdminDashboard = () => {
   const [recentTransactions, setRecentTransactions] = useState([]);
   const [popularBooks, setPopularBooks] = useState([]);
   
-  // We'll keep this hardcoded for now as it might not be in the API yet
-  const [overdueBooks, setOverdueBooks] = useState([
-    { id: 1, student: 'John Doe', book: 'Clean Code', dueDate: '2025-05-15', daysOverdue: 9 },
-    { id: 2, student: 'Sarah Williams', book: 'Introduction to Algorithms', dueDate: '2025-05-20', daysOverdue: 4 },
-  ]);
+  // State for overdue books
+  const [overdueBooks, setOverdueBooks] = useState([]);
   
   // Fetch data when component mounts
   useEffect(() => {
@@ -79,9 +76,9 @@ const AdminDashboard = () => {
         const books = await dashboardService.getPopularBooks(3);
         setPopularBooks(books);
         
-        // You might need to add an API endpoint for overdue books
-        // const overdue = await dashboardService.getOverdueBooks(2);
-        // setOverdueBooks(overdue);
+        // Fetch overdue books
+        const overdue = await dashboardService.getOverdueBooks(2);
+        setOverdueBooks(overdue);
         
         setLoading(false);
       } catch (error) {
@@ -788,59 +785,64 @@ const AdminDashboard = () => {
                 </Button>
               </Box>
               <List sx={{ py: 0 }}>
-                {overdueBooks.map((item, index) => (
-                  <React.Fragment key={item.id}>
-                    <ListItem
-                      sx={{
-                        py: 2,
-                        px: 3,
-                        transition: 'background-color 0.2s',
-                        '&:hover': {
-                          bgcolor: alpha(theme.palette.error.main, 0.04),
-                        },
-                      }}
-                      secondaryAction={
-                        <Tooltip title="Days overdue">
-                          <Chip
-                            label={`${item.daysOverdue} days`}
-                            size="small"
-                            color="error"
+                {loading ? (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                    <CircularProgress />
+                  </Box>
+                ) : overdueBooks.length > 0 ? (
+                  overdueBooks.map((item, index) => (
+                    <React.Fragment key={item.id}>
+                      <ListItem
+                        sx={{
+                          py: 2,
+                          px: 3,
+                          transition: 'background-color 0.2s',
+                          '&:hover': {
+                            bgcolor: alpha(theme.palette.error.main, 0.04),
+                          },
+                        }}
+                        secondaryAction={
+                          <Tooltip title="Days overdue">
+                            <Chip
+                              label={`${item.daysOverdue} days`}
+                              size="small"
+                              color="error"
+                              sx={{ 
+                                borderRadius: '12px',
+                                fontWeight: 'medium',
+                                fontSize: '0.75rem'
+                              }}
+                            />
+                          </Tooltip>
+                        }
+                      >
+                        <ListItemAvatar>
+                          <Avatar 
                             sx={{ 
-                              borderRadius: '12px',
-                              fontWeight: 'medium',
-                              fontSize: '0.75rem'
+                              bgcolor: alpha(theme.palette.error.main, 0.1),
+                              color: theme.palette.error.main
                             }}
-                          />
-                        </Tooltip>
-                      }
-                    >
-                      <ListItemAvatar>
-                        <Avatar 
-                          sx={{ 
-                            bgcolor: alpha(theme.palette.error.main, 0.1),
-                            color: theme.palette.error.main
-                          }}
-                        >
-                          <WarningIcon />
-                        </Avatar>
-                      </ListItemAvatar>
-                      <ListItemText
-                        primary={
-                          <Typography variant="body1" fontWeight="medium">
-                            {item.book}
-                          </Typography>
-                        }
-                        secondary={
-                          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                            {item.student} • Due: {item.dueDate}
-                          </Typography>
-                        }
-                      />
-                    </ListItem>
-                    {index < overdueBooks.length - 1 && <Divider sx={{ mx: 3 }} />}
-                  </React.Fragment>
-                ))}
-                {overdueBooks.length === 0 && (
+                          >
+                            <WarningIcon />
+                          </Avatar>
+                        </ListItemAvatar>
+                        <ListItemText
+                          primary={
+                            <Typography variant="body1" fontWeight="medium">
+                              {item.book ? item.book.name : 'Unknown Book'}
+                            </Typography>
+                          }
+                          secondary={
+                            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                              {item.student ? item.student.name : 'Unknown Student'} • Due: {new Date(item.dueDate).toLocaleDateString()}
+                            </Typography>
+                          }
+                        />
+                      </ListItem>
+                      {index < overdueBooks.length - 1 && <Divider sx={{ mx: 3 }} />}
+                    </React.Fragment>
+                  ))
+                ) : (
                   <Box sx={{ 
                     textAlign: 'center', 
                     py: 4,

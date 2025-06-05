@@ -35,6 +35,19 @@ const dashboardService = {
       console.error("Error fetching popular books:", error);
       throw error;
     }
+  },
+  
+  getOverdueBooks: async (limit = 5) => {
+    try {
+      console.log("Fetching overdue books from API...");
+      const response = await api.get(`/api/dashboard/overdue-books?limit=${limit}`);
+      console.log("Overdue books response:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching overdue books:", error);
+      // Return empty array to show "No overdue books" message
+      return [];
+    }
   }
 };
 

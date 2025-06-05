@@ -52,6 +52,7 @@ const Students = () => {
     emailId: '',
     age: '',
     country: '',
+    studentId: '',
     password: ''
   });
   const [editStudent, setEditStudent] = useState({
@@ -60,6 +61,7 @@ const Students = () => {
     emailId: '',
     age: '',
     country: '',
+    studentId: '',
   });
 
   // Fetch students from the database
@@ -105,6 +107,7 @@ const Students = () => {
       emailId: '',
       age: '',
       country: '',
+      studentId: '',
       password: ''
     });
     setError('');
@@ -126,6 +129,7 @@ const Students = () => {
         emailId: student.emailId,
         age: student.age,
         country: student.country,
+        studentId: student.studentId || '',
       });
       setError('');
       setSuccess('');
@@ -170,7 +174,7 @@ const Students = () => {
 
   const handleAddStudent = async () => {
     // Validate form
-    if (!newStudent.name || !newStudent.emailId || !newStudent.age || !newStudent.country || !newStudent.password) {
+    if (!newStudent.name || !newStudent.emailId || !newStudent.age || !newStudent.country || !newStudent.password || !newStudent.studentId) {
       setError('Please fill in all required fields');
       return;
     }
@@ -208,7 +212,7 @@ const Students = () => {
 
   const handleEditStudent = async () => {
     // Validate form
-    if (!editStudent.name || !editStudent.emailId || !editStudent.age || !editStudent.country) {
+    if (!editStudent.name || !editStudent.emailId || !editStudent.age || !editStudent.country || !editStudent.studentId) {
       setError('Please fill in all required fields');
       return;
     }
@@ -317,6 +321,7 @@ const Students = () => {
               <TableHead>
                 <TableRow sx={{ backgroundColor: 'primary.light' }}>
                   <TableCell sx={{ fontWeight: 'bold', color: 'white' }}>ID</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', color: 'white' }}>Student ID</TableCell>
                   <TableCell sx={{ fontWeight: 'bold', color: 'white' }}>Name</TableCell>
                   <TableCell sx={{ fontWeight: 'bold', color: 'white' }}>Email</TableCell>
                   <TableCell sx={{ fontWeight: 'bold', color: 'white' }}>Age</TableCell>
@@ -334,6 +339,7 @@ const Students = () => {
                         sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                       >
                         <TableCell>{student.id}</TableCell>
+                        <TableCell>{student.studentId}</TableCell>
                         <TableCell>{student.name}</TableCell>
                         <TableCell>{student.emailId}</TableCell>
                         <TableCell>{student.age}</TableCell>
@@ -369,7 +375,7 @@ const Students = () => {
                     ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={6} align="center">
+                    <TableCell colSpan={7} align="center">
                       {searchTerm ? 'No students match your search' : 'No students found'}
                     </TableCell>
                   </TableRow>
@@ -418,6 +424,19 @@ const Students = () => {
             </Alert>
           )}
           <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Student ID"
+                variant="outlined"
+                name="studentId"
+                value={newStudent.studentId}
+                onChange={handleInputChange}
+                required
+                disabled={loading}
+                helperText="Leave blank to auto-generate"
+              />
+            </Grid>
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -524,6 +543,18 @@ const Students = () => {
             </Alert>
           )}
           <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Student ID"
+                variant="outlined"
+                name="studentId"
+                value={editStudent.studentId}
+                onChange={handleEditInputChange}
+                required
+                disabled={loading}
+              />
+            </Grid>
             <Grid item xs={12}>
               <TextField
                 fullWidth
